@@ -4,4 +4,4 @@ This repository contains implementations of several graph neural networks using 
 ## Implementations
 | Name | Description | Thesis |
 |:-----|:------------|:-------|
-|[Graph Attention Network](./graph_neural_networks/layers/GraphAttentionLayer.py)| Slightly modified from the keras implementations from [danielegrattarola/keras-gat](https://github.com/danielegrattarola/keras-gat). | [ICLR 2018](https://arxiv.org/abs/1710.10903) |
+|[Graph Attention Network](./graph_neural_networks/layers/GraphAttentionLayer.py)| 1. Slightly modified from the keras implementations from [danielegrattarola/keras-gat](https://github.com/danielegrattarola/keras-gat).<br>2. to adapt to Tensorflow Dataset and GradientTape.<br>3. Add additional functionality to compute concat attention without using mask (memory efficient on the cost of computational time)  | [ICLR 2018](https://arxiv.org/abs/1710.10903) |
