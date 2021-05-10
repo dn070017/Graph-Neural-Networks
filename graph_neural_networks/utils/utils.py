@@ -43,7 +43,8 @@ def load_dataset(target):
         edges.columns = ['source', 'target']
         edges['source'] = edges['source'].apply(lambda x: idx[x])
         edges['target'] = edges['target'].apply(lambda x: idx[x])
-        A = nx.to_numpy_array(nx.from_pandas_edgelist(edges))
+        A = nx.to_numpy_array(nx.from_pandas_edgelist(edges), nodelist=X.index)
+        np.fill_diagonal(A, 1.0)
     
     dataset = tf.data.Dataset.from_generator(data_generator, output_types={'x': tf.float32, 'y': tf.float32, 'edge': tf.float32, 'idx': tf.int32})
     idx = pd.Series(y.index, index=np.arange(len(y)))
