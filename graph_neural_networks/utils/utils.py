@@ -3,50 +3,48 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-def load_dataset(target):
+def load_dataset(target, self_loop=True):
     """load_dataset
     
     Load built-in dataset
     
     Parameters:
-       target: 'cora'
+        target:
+            str, 'cora'
+        self_loop:
+            boolean, whether or not to add self loop to the graph.
     
     Return:
-        dataset:
-            Tensorflow dataset with field:
-                1. x: feature tensor, shape: (1, F)
-                2. y: one-hot encoded label tensor, shape (1, num_classes)
-                3. edge: adjancy matrix, shape: (1, nodes)
-                4. idx: reindex used to extract edge information, int.
+        X:
+            feature numpy array, shape: (1, F)
+        y:
+            one-hot encoded label numpy array, shape (1, num_classes)
+        A:
+            sparse adjancency matrix, shape: (1, nodes)
         label:
-            Original label for each class. 
+            list of node labels.
         idx:
-            Original index for each node.
+            dictionary of index mapping.
     """
-    
-    def data_generator():
-        for feature, label, edge, i in zip(X.values, y.values, A, np.arange(len(y))):
-            yield {'x': feature, 'y': label, 'edge': edge, 'idx': i}
-        
     target = target.lower()
     assert target in ['cora']
     if target == 'cora':
         nodes = pd.read_csv('./dataset/cora/cora.content', sep='\t', index_col=0, header=None)
-        X = nodes.iloc[:, :-1]
-        
-        y = pd.get_dummies(nodes.iloc[:, -1])
+        node_index = nodes.index
+        X = nodes.iloc[:, :-1].reset_index(drop=True).astype(np.float32)
+        #X = (X.T - X.mean(axis=1)) / X.std(axis=1).T
+        y = pd.get_dummies(nodes.iloc[:, -1]).reset_index(drop=True).astype(np.float32)
         label = y.columns
         
-        idx = pd.Series(np.arange(len(y)), index=y.index)
+        idx = pd.Series(np.arange(len(node_index)), index=node_index)
         
         edges = pd.read_csv('./dataset/cora/cora.cites', sep='\t')
         edges.columns = ['source', 'target']
         edges['source'] = edges['source'].apply(lambda x: idx[x])
         edges['target'] = edges['target'].apply(lambda x: idx[x])
-        A = nx.to_numpy_array(nx.from_pandas_edgelist(edges), nodelist=X.index)
-        np.fill_diagonal(A, 1.0)
-    
-    dataset = tf.data.Dataset.from_generator(data_generator, output_types={'x': tf.float32, 'y': tf.float32, 'edge': tf.float32, 'idx': tf.int32})
-    idx = pd.Series(y.index, index=np.arange(len(y)))
-    
-    return dataset, label, idx
+        graph = nx.from_pandas_edgelist(edges)
+        A = nx.to_scipy_sparse_matrix(graph, nodelist=X.index).tolil().astype(np.float32)
+        if self_loop:
+            A.setdiag(1.0)
+
+    return X.values, y.values, A, list(label), idx.to_dict()
